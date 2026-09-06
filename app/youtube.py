@@ -16,4 +16,4 @@ def extract_video_id(url: str)->str:
     if parsed.hostname == "youtu.be":
         return parsed.path.strip("/").split("/")[0]
     
-    raise ValueError("Invalid or unsupported Youtbe URL")
+    raise ValueError("Invalid or unsupported YouTube URL")

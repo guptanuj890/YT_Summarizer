@@ -6,7 +6,7 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_lesson(transcipt_text: str)-> str:
+def summarize_transcript(transcipt_text: str)-> str:
     
     instructions = """
     You are an expert teacher.
