@@ -1,10 +1,11 @@
-from state import LessonState
+from state import LessonState, ChunkState
 from youtube import extract_video_id
 from transcript import fetch_transcript, transcript_to_text
 from tokenizer import count_tokens
 from strategy import decide_strategy
-from llm import summarize_transcript
+from llm import summarize_transcript, summarize_chunk, synthesize_lesson
 from chunking import chunk_transcript
+
 
 def extract_video_id_node(state: LessonState)->LessonState:
     try:
@@ -73,3 +74,18 @@ def handle_error_node(state: LessonState)->LessonState:
     print(f"\nError: {state['error']}")
     
     return state
+
+def summarize_chunk_node(state: ChunkState):
+    summary = summarize_chunk(state["chunk"])
+    
+    return{
+        "chunk_summaries": [summary]
+    }
+    
+def reduce_synthesize_node(state:LessonState)-> LessonState:
+    lesson = synthesize_lesson(state["chunk_summaries"])
+    
+    return {
+        **state,
+        "lesson_draft": lesson
+    }

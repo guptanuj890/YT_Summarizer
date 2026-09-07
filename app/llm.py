@@ -31,3 +31,59 @@ def summarize_transcript(transcipt_text: str)-> str:
     )
     
     return response.output_text
+
+def summarize_chunk(chunk: str)-> str:
+    instructions = """
+        You are extracting educational information from one section of a YouTube transcript.
+        Summarize this section for another AI that will later combine it with summaries from other sections.
+        
+        Extract:
+        - Concepts taught
+        - Important explanations
+        - Examples
+        - Technical details
+        - Important conclusions
+        
+        Preserve the meaning of the instructor.
+        Do not invent insformation.
+        Keep the summary concise but information-dense.
+    """
+    response = client.responses.create(
+        model = "gpt-4o-mini",
+        instructions = instructions,
+        input = chunk
+    )
+    
+    return response.output_text
+
+
+def synthesize_lesson(chunk_summaries: list[str])->str:
+    combined_summaries = "\n\n".join(
+        f"SECTION {i+1}\n{summary}"
+        for i, summary in enumerate(chunk_summaries)
+    )
+    
+    instructions = """
+        You are an expert teacher.
+        The input contains summaries of different sections of a YouTube video.
+        Create one coherent educational lesson from them.
+        
+        Requirements:
+        - Cover all important concepts from the sections.
+        - Remove redundant information.
+        - Preserve important technical details.
+        - Connect ralated concepts into a logical progression.
+        - Include examples mentioned in the video.
+        - Do not invent information.
+        - Use clear Markdown Headings.
+        - End with a concise summary.
+        - The result should read like one lesson, not a collection of separate summaries.
+    """
+    
+    response = client.responses.create(
+        model = "gpt-4o",
+        instructions = instructions,
+        input = combined_summaries
+    )
+    return response.output_text
+        

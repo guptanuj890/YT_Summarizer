@@ -14,7 +14,8 @@ def main():
         "strategy": "",
         "error": None,
         "lesson_draft": "",
-        "chunks": []
+        "chunks": [],
+        "chunk_summaries": []
     }
     # print(initial_state["video_url"])
     result = graph.invoke(initial_state)
@@ -27,9 +28,9 @@ def main():
     if result["lesson_draft"]:
         print("\n==========LESSON=========\n")
         print(result["lesson_draft"])
-    for i, chunk in enumerate(result["chunks"]):
-        print(f"\n=======CHUNK {i+1} =======\n")
-        print(chunk[:500])
+    # for i, chunk in enumerate(result["chunk_summaries"]):
+    #     print(f"\n=======CHUNK Summaries {i+1} =======\n")
+    #     print(chunk[:500])
     
     
 if __name__ == "__main__":

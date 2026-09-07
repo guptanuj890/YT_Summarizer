@@ -1,4 +1,4 @@
-DIRECT_TOKEN_LIMIT = 8000
+DIRECT_TOKEN_LIMIT = 6000
 
 def decide_strategy(token_count: int)->str:
     if token_count <= DIRECT_TOKEN_LIMIT:
