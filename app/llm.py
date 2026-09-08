@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI 
+from schema import LessonDraft
 
 load_dotenv()
 
@@ -10,27 +11,22 @@ def summarize_transcript(transcipt_text: str)-> str:
     
     instructions = """
     You are an expert teacher.
-    You job is to transform a YouTube transcript into a clear, structured lesson.
+    You job is to transform a YouTube transcript into a complete educational lesson.
     
-    Requirements:
-    -Cover the important concepts taught in the transcript.
-    -Explain concepts in simple language.
-    -Preserve important technical details.
-    -Include examples mentioned by the instructor.
-    -Do not invent information that is not supported by the transcript.
-    -Organize the lesson with clear Markdown headings.
-    -End with a concise summary.
+    Cover the important concepts taught in the transcript, explain concepts in simple language, preserve important technical details, include examples mentioned by the instructor.
+    Do not invent information that is not supported by the transcript.
     
     Write the lesson as if you are teaching someone who has not watched the video.
     """
     
-    response = client.responses.create(
+    response = client.responses.parse(
         model = "gpt-4o",
         instructions = instructions,
         input = transcipt_text,
+        text_format = LessonDraft
     )
     
-    return response.output_text
+    return response.output_parsed
 
 def summarize_chunk(chunk: str)-> str:
     instructions = """
@@ -57,7 +53,7 @@ def summarize_chunk(chunk: str)-> str:
     return response.output_text
 
 
-def synthesize_lesson(chunk_summaries: list[str])->str:
+def synthesize_lesson(chunk_summaries: list[str])->LessonDraft:
     combined_summaries = "\n\n".join(
         f"SECTION {i+1}\n{summary}"
         for i, summary in enumerate(chunk_summaries)
@@ -68,22 +64,15 @@ def synthesize_lesson(chunk_summaries: list[str])->str:
         The input contains summaries of different sections of a YouTube video.
         Create one coherent educational lesson from them.
         
-        Requirements:
-        - Cover all important concepts from the sections.
-        - Remove redundant information.
-        - Preserve important technical details.
-        - Connect ralated concepts into a logical progression.
-        - Include examples mentioned in the video.
-        - Do not invent information.
-        - Use clear Markdown Headings.
-        - End with a concise summary.
-        - The result should read like one lesson, not a collection of separate summaries.
+        Cover the important concepts taught in the transcript, explain concepts in simple language, preserve important technical details, include examples mentioned by the instructor.
+        Do not invent information that is not supported by the transcript.
     """
     
-    response = client.responses.create(
+    response = client.responses.parse(
         model = "gpt-4o",
         instructions = instructions,
-        input = combined_summaries
+        input = combined_summaries,
+        text_format = LessonDraft
     )
     return response.output_text
         
