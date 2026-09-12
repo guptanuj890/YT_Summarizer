@@ -3,6 +3,7 @@ from state import LessonState
 from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, format_output_node
 from langgraph.types import Send
 from routers import route_for_error, route_strategy, fan_out_chunks
+from db import get_checkpointer
 
 
 def build_graph():
@@ -51,4 +52,8 @@ def build_graph():
     graph.add_edge("format_output", END)
     graph.add_edge("handle_error", END)
     
-    return graph.compile()
+    checkpointer = get_checkpointer()
+    
+    return graph.compile(
+        checkpointer = checkpointer
+    )

@@ -6,6 +6,9 @@ from strategy import decide_strategy
 from llm import summarize_transcript, summarize_chunk, synthesize_lesson
 from chunking import chunk_transcript
 from formatter import format_lesson_markdown
+from cache import TranscriptCache
+
+cache = TranscriptCache()
 
 
 def extract_video_id_node(state: LessonState)->LessonState:
@@ -24,20 +27,41 @@ def extract_video_id_node(state: LessonState)->LessonState:
     
     
 def fetch_transcript_node(state: LessonState)->LessonState:
-    try:
-        raw_transcript = fetch_transcript(state["video_id"])
-        transcript_text = transcript_to_text(raw_transcript)
+    
+    video_id = state["video_id"]
+    
+    raw_transcript = cache.get(video_id)
+    
+    if raw_transcript is not None:
+        print("Transcript loaded from cache.")
         
-        return {
-            **state,
-            "raw_transcript": raw_transcript,
-            "transcript_text": transcript_text
-        }
-    except ValueError as e:
-        return {
-            **state,
-            "error": str(e)
-        }
+    else:
+        try:
+            raw_transcript = fetch_transcript(state["video_id"])
+            
+            cache.set(
+                video_id,
+                raw_transcript
+            )
+            
+            print("Transcript fetched from YouTube.")
+            
+        except ValueError as e:
+            return {
+                **state,
+                "error": str(e)
+            }
+            
+    transcript_text = transcript_to_text(
+        raw_transcript
+    )
+    
+    return {
+        **state,
+        "raw_transcript": raw_transcript,
+        "transcript_text": transcript_text,
+        "error": None
+    }
         
 def count_tokens_node(state: LessonState)-> LessonState:
     token_count = count_tokens(state["transcript_text"])

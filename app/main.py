@@ -1,8 +1,17 @@
 from graph import build_graph
+import uuid
 
 def main():
+    
     url = input("Enter YouTube video Link: ")
     
+    thread_id = str(uuid.uuid4())
+    
+    config = {
+        "configurable": {
+            "thread_id": thread_id
+        }
+    }
     graph = build_graph()
     
     initial_state = {
@@ -19,19 +28,15 @@ def main():
         "final_lesson_md": ""
     }
     # print(initial_state["video_url"])
-    result = graph.invoke(initial_state)
+    result = graph.invoke(
+        initial_state,
+        config = config
+    )
     
-    # print("video_id:", result["video_id"])
     
-    # print("transcript_text:", result["transcript_text"])
-    # print("Tokens:", result["token_count"])
-    # print("strategy: ", result["strategy"])
     if result["final_lesson_md"]:
         print("\n==========LESSON=========\n")
         print(result["final_lesson_md"])
-    # for i, chunk in enumerate(result["chunk_summaries"]):
-    #     print(f"\n=======CHUNK Summaries {i+1} =======\n")
-    #     print(chunk[:500])
     
     
 if __name__ == "__main__":

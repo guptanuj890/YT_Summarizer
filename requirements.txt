@@ -1,0 +1,6 @@
+langgraph
+openai
+youtube-transcript-api
+python-dotenv
+tiktoken
+langgraph-checkpoint-sqlite
