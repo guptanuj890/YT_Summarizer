@@ -1,6 +1,6 @@
 from typing import TypedDict, Annotated
 import operator
-from schema import LessonDraft
+from schema import LessonDraft, ChunkSummary
 
 class LessonState(TypedDict):
     video_url: str
@@ -13,7 +13,7 @@ class LessonState(TypedDict):
     lesson_draft: LessonDraft | None
     chunks: list[str]
     chunk_summaries: Annotated[
-        list[str],
+        list[ChunkSummary],
         operator.add
     ]
     final_lesson_md: str

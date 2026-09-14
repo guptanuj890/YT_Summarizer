@@ -121,7 +121,10 @@ def format_output_node(state: LessonState)-> LessonState:
     if lesson is None:
         raise ValueError("No lesson drafrt available")
     
-    markdown = format_lesson_markdown(lesson)
+    markdown = format_lesson_markdown(
+        lesson,
+        state["video_id"]
+    )
     
     return{
         **state,

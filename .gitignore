@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+lesson_agent.db
+lesson_cache.db
+
+
 # C extensions
 *.so
 

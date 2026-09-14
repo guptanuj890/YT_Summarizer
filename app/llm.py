@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI 
-from schema import LessonDraft
+from schema import LessonDraft, ChunkSummary
 
 load_dotenv()
 
@@ -32,6 +32,11 @@ def summarize_chunk(chunk: str)-> str:
     instructions = """
         You are extracting educational information from one section of a YouTube transcript.
         Summarize this section for another AI that will later combine it with summaries from other sections.
+        Preserve important timestamp references.
+        The transcript contains timestamps in this format:
+        [123.4s] text
+        For every important concept or explanation, identify the timestamp where it was taught.
+        Do not invent timestamps.
         
         Extract:
         - Concepts taught
@@ -44,25 +49,40 @@ def summarize_chunk(chunk: str)-> str:
         Do not invent insformation.
         Keep the summary concise but information-dense.
     """
-    response = client.responses.create(
+    response = client.responses.parse(
         model = "gpt-4o-mini",
         instructions = instructions,
-        input = chunk
+        input = chunk,
+        text_format = ChunkSummary
     )
     
-    return response.output_text
+    return response.output_parsed
 
 
 def synthesize_lesson(chunk_summaries: list[str])->LessonDraft:
-    combined_summaries = "\n\n".join(
-        f"SECTION {i+1}\n{summary}"
-        for i, summary in enumerate(chunk_summaries)
+    input_text = "\n\n".join(
+        f"""
+        SUMMARY:
+        {summary.summary}
+        
+        SOURCES:
+        {summary.sources}
+        """
+        for summary in chunk_summaries
     )
     
     instructions = """
         You are an expert teacher.
         The input contains summaries of different sections of a YouTube video.
         Create one coherent educational lesson from them.
+        
+        Important rules:
+        1. Cover all the important concepts from the summaries.
+        2. Organize related concepts logically.
+        3. Preserve source timestamps for cocepts and examples.
+        4. Only use timestamps that appear in the provided summaries.
+        5. Never invent or modify timestamps.
+        6. Use the most relevant timestamp(s) for each concept.
         
         Cover the important concepts taught in the transcript, explain concepts in simple language, preserve important technical details, include examples mentioned by the instructor.
         Do not invent information that is not supported by the transcript.
@@ -71,8 +91,8 @@ def synthesize_lesson(chunk_summaries: list[str])->LessonDraft:
     response = client.responses.parse(
         model = "gpt-4o",
         instructions = instructions,
-        input = combined_summaries,
+        input = input_text,
         text_format = LessonDraft
     )
-    return response.output_text
+    return response.output_parsed
         
