@@ -18,5 +18,12 @@ class LessonState(TypedDict):
     ]
     final_lesson_md: str
     
+    difficulty: str
+    include_examples: bool
+    include_quiz: bool
+    
 class ChunkState(TypedDict):
     chunk: str
+    difficulty: str
+    include_examples: bool
+    include_quiz: bool

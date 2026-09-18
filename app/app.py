@@ -20,6 +20,9 @@ if "lesson" not in st.session_state:
 if "video_id" not in st.session_state:
     st.session_state.video_id = None
 
+if "lesson_settings" not in st.session_state:
+    st.session_state.lesson_settings = None
+
 
 # --------------------------------------------------
 # Graph
@@ -71,7 +74,6 @@ youtube_url = st.text_input(
     placeholder="https://www.youtube.com/watch?v=..."
 )
 
-
 generate_button = st.button(
     "Generate Lesson",
     type="primary"
@@ -100,25 +102,65 @@ if generate_button:
             initial_state = {
                 "video_url": youtube_url,
                 "video_id": "",
+                "difficulty": difficulty,
+                "include_examples": include_examples,
+                "include_quiz": include_quiz,
                 "raw_transcript": [],
                 "transcript_text": "",
                 "token_count": 0,
                 "strategy": "",
-                "error": None,
-                "lesson_draft": None,
                 "chunks": [],
                 "chunk_summaries": [],
-                "final_lesson_md": ""
+                "lesson_draft": None,
+                "final_lesson_md": "",
+                "error": None,
+            }
+            
+            progress_placeholder = st.empty()
+
+            progress_steps = {
+                "extract_video_id": "🎬 Extracting video ID",
+                "fetch_transcript": "📝 Fetching transcript",
+                "count_tokens": "🔢 Counting tokens",
+                "decide_strategy": "🧠 Selecting processing strategy",
+                "chunk_transcript": "✂️ Splitting transcript",
+                "summarize_direct": "🤖 Generating lesson",
+                "summarize_chunk": "🤖 Processing transcript chunks",
+                "reduce_synthesize": "📚 Combining lesson",
+                "format_output": "✨ Formatting lesson",
+                "handle_error": "❌ Handling error",
             }
 
-            result = graph.invoke(
+            result = {}
+
+            completed_steps = []
+
+            for event in graph.stream(
                 initial_state,
                 config={
                     "configurable": {
                         "thread_id": youtube_url
                     }
-                }
-            )
+                },
+                stream_mode="updates"
+            ):
+
+                for node_name, update in event.items():
+
+                    if node_name in progress_steps:
+                        step_name = progress_steps[node_name]
+
+                        if step_name not in completed_steps:
+                            completed_steps.append(step_name)
+
+                    result.update(update)
+
+                    progress_placeholder.markdown(
+                        "\n".join(
+                            f"✅ {step}"
+                            for step in completed_steps
+                        )
+                    )
 
             if result["error"]:
 
@@ -136,9 +178,22 @@ if generate_button:
                     state="complete"
                 )
 
-                # Save lesson in session state
+                # ------------------------------------------
+                # Save generated lesson
+                # ------------------------------------------
+
                 st.session_state.lesson = result["lesson_draft"]
+
                 st.session_state.video_id = result["video_id"]
+
+                # IMPORTANT:
+                # Save the settings that were actually used
+                # for this generated lesson.
+                st.session_state.lesson_settings = {
+                    "difficulty": result["difficulty"],
+                    "include_examples": result["include_examples"],
+                    "include_quiz": result["include_quiz"],
+                }
 
                 st.success(
                     "Your lesson is ready!"
@@ -151,13 +206,23 @@ if generate_button:
 
 lesson = st.session_state.lesson
 video_id = st.session_state.video_id
+lesson_settings = st.session_state.lesson_settings
 
 
-if lesson is not None:
+if lesson is not None and lesson_settings is not None:
 
     st.divider()
 
     st.header(lesson.title)
+
+
+    # --------------------------------------------------
+    # Show Generated Settings
+    # --------------------------------------------------
+
+    st.caption(
+        f"Difficulty: {lesson_settings['difficulty']}"
+    )
 
 
     # --------------------------------------------------
@@ -199,7 +264,7 @@ if lesson is not None:
     # Examples
     # --------------------------------------------------
 
-    if include_examples:
+    if lesson_settings["include_examples"]:
 
         st.subheader("💡 Examples")
 
@@ -243,7 +308,7 @@ if lesson is not None:
     # Quiz
     # --------------------------------------------------
 
-    if include_quiz:
+    if lesson_settings["include_quiz"]:
 
         st.subheader("🧠 Quiz")
 
@@ -256,29 +321,7 @@ if lesson is not None:
                 f"### {i}. {question.question}"
             )
 
-            # user_answer = st.text_input(
-            #     "Your answer",
-            #     key=f"quiz_answer_{i}"
-            # )
-
             # For now, always show the answer
             st.info(
                 f"**Answer:** {question.answer}"
             )
-
-            # if st.button(
-            #     "Check Answer",
-            #     key=f"check_{i}"
-            # ):
-
-            #     if not user_answer.strip():
-
-            #         st.warning(
-            #             "Please enter an answer first."
-            #         )
-
-            #     else:
-
-            #         st.success(
-            #             "Answer checked!"
-            #         )

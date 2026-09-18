@@ -80,7 +80,13 @@ def decide_strategy_node(state: LessonState)-> LessonState:
     }
 
 def summarize_direct_node(state: LessonState)->LessonState:
-    lesson = summarize_transcript(state["transcript_text"])
+    lesson = summarize_transcript(state["transcript_text"], state["difficulty"], state["include_examples"], state["include_quiz"])
+    
+    if not state["include_examples"]:
+        lesson.examples = []
+
+    if not state["include_quiz"]:
+        lesson.quiz = []
     
     return {
         **state,
@@ -101,14 +107,30 @@ def handle_error_node(state: LessonState)->LessonState:
     return state
 
 def summarize_chunk_node(state: ChunkState):
-    summary = summarize_chunk(state["chunk"])
+    summary = summarize_chunk(
+        state["chunk"],
+        state["difficulty"],
+        state["include_examples"],
+        state["include_quiz"]
+    )
+    
+    if not state["include_examples"]:
+        lesson.examples = []
+
+    if not state["include_quiz"]:
+        lesson.quiz = []
     
     return{
         "chunk_summaries": [summary]
     }
     
 def reduce_synthesize_node(state:LessonState)-> LessonState:
-    lesson = synthesize_lesson(state["chunk_summaries"])
+    lesson = synthesize_lesson(
+        state["chunk_summaries"],
+        state["difficulty"],
+        state["include_examples"],
+        state["include_quiz"]
+    )
     
     return {
         **state,
@@ -119,7 +141,7 @@ def format_output_node(state: LessonState)-> LessonState:
     lesson = state["lesson_draft"]
     
     if lesson is None:
-        raise ValueError("No lesson drafrt available")
+        raise ValueError("No lesson draft available")
     
     markdown = format_lesson_markdown(
         lesson,

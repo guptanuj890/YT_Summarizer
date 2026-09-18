@@ -14,7 +14,12 @@ def fan_out_chunks(state:LessonState):
     return [
         Send(
             "summarize_chunk",
-            {"chunk": chunk}
+            {
+                "chunk": chunk,
+                "difficulty": state["difficulty"],
+                "include_examples": state["inlclude_examples"],
+                "include_quiz": state["include_quiz"]
+            }
         )
         for chunk in state["chunks"]
     ]
