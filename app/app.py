@@ -1,4 +1,5 @@
 import streamlit as st
+import uuid
 
 from graph import build_graph
 
@@ -134,12 +135,13 @@ if generate_button:
             result = {}
 
             completed_steps = []
+            
 
             for event in graph.stream(
                 initial_state,
                 config={
                     "configurable": {
-                        "thread_id": youtube_url
+                        "thread_id": str(uuid.uuid4())
                     }
                 },
                 stream_mode="updates"

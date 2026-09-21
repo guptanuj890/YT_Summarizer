@@ -17,7 +17,7 @@ def fan_out_chunks(state:LessonState):
             {
                 "chunk": chunk,
                 "difficulty": state["difficulty"],
-                "include_examples": state["inlclude_examples"],
+                "include_examples": state["include_examples"],
                 "include_quiz": state["include_quiz"]
             }
         )

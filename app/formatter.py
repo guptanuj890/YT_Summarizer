@@ -16,7 +16,7 @@ def format_timestamp(timestamp: float, video_id:str)-> str:
 def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
     lines = []
     
-    lines.append(f"#{lesson.title}")
+    lines.append(f"# {lesson.title}")
     lines.append("")
     
     lines.append("# Key Concepts")
@@ -37,7 +37,7 @@ def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
                 )
                 
                 lines.append(
-                    f"- '{timestamp} - {source.description}"
+                    f"- {timestamp} - {source.description}"
                 )
                 
             lines.append("")

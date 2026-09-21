@@ -114,17 +114,12 @@ def summarize_chunk_node(state: ChunkState):
         state["include_quiz"]
     )
     
-    if not state["include_examples"]:
-        lesson.examples = []
-
-    if not state["include_quiz"]:
-        lesson.quiz = []
-    
     return{
         "chunk_summaries": [summary]
     }
     
 def reduce_synthesize_node(state:LessonState)-> LessonState:
+    
     lesson = synthesize_lesson(
         state["chunk_summaries"],
         state["difficulty"],

@@ -113,6 +113,21 @@ def summarize_chunk(chunk: str, difficulty: str, include_examples: bool, include
 
     return response.output_parsed
 
+def format_chunk_summaries(chunk_summaries):
+    return "\n\n".join(
+        f"""
+        SUMMARY {i + 1}
+
+        {summary.summary}
+
+        SOURCES:
+        {chr(10).join(
+            f"- [{source.timestamp:.1f}s] {source.description}"
+            for source in summary.sources
+        )}
+        """
+        for i, summary in enumerate(chunk_summaries)
+    )
 
 def synthesize_lesson(chunk_summaries: list[str], difficulty: str, include_examples: bool, include_quiz: bool)->LessonDraft:
     input_text = "\n\n".join(
