@@ -23,7 +23,7 @@ def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
     lines.append("")
     
     for concept in lesson.concepts:
-        lines.append(f"###{concept.name}")
+        lines.append(f"### {concept.name}")
         lines.append("")
         lines.append(concept.explanation)
         lines.append("")
@@ -37,7 +37,7 @@ def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
                 )
                 
                 lines.append(
-                    f"- {timestamp} - {source.description}"
+                    f" - {timestamp} - {source.description}"
                 )
                 
             lines.append("")
@@ -48,7 +48,7 @@ def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
         lines.append("")
         
         for example in lesson.examples:
-            lines.append(f"- {example.description}")
+            lines.append(f" - {example.description}")
             
             if example.sources:
                 for source in example.sources:
@@ -58,7 +58,7 @@ def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
                     )
                     
                     lines.append(
-                        f" - '{timestamp} - {source.description}"
+                        f" - {timestamp} - {source.description}"
                     )
                 
             lines.append("")
@@ -76,6 +76,6 @@ def format_lesson_markdown(lesson: LessonDraft, video_id: str)-> str:
             lines.append(f"### {i}. {question.question}")
             lines.append("")
             lines.append(f"**Answer:** {question.answer}")
-            lines.append
+            lines.append("")
             
     return "\n".join(lines)
