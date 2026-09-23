@@ -2,6 +2,7 @@ import streamlit as st
 import uuid
 
 from graph import build_graph
+from chat import answer_doubt
 
 
 st.set_page_config(
@@ -24,6 +25,8 @@ if "video_id" not in st.session_state:
 if "lesson_settings" not in st.session_state:
     st.session_state.lesson_settings = None
 
+if "chat_messages" not in st.session_state:
+    st.session_state.chat_messages = []
 
 # --------------------------------------------------
 # Graph
@@ -216,8 +219,19 @@ if lesson is not None and lesson_settings is not None:
     st.divider()
 
     st.header(lesson.title)
+    # --------------------------------------------------
+    # Key Takeaways
+    # --------------------------------------------------
 
+    if lesson.key_takeaways:
 
+        st.subheader("🎯 Key Takeaways")
+
+        for takeaway in lesson.key_takeaways:
+            st.markdown(
+                f"- {takeaway}"
+            )
+    
     # --------------------------------------------------
     # Show Generated Settings
     # --------------------------------------------------
@@ -261,7 +275,14 @@ if lesson is not None and lesson_settings is not None:
                 f"{source.description}"
             )
 
+    if any(concept.analogy for concept in lesson.concepts):
+        st.subheader("Analogies")
+        for concept in lesson.concepts:
+            if concept.analogy:
+                st.markdown(f"**{concept.name}**")
+                st.markdown(f"- {concept.analogy}")
 
+        
     # --------------------------------------------------
     # Examples
     # --------------------------------------------------
@@ -305,7 +326,6 @@ if lesson is not None and lesson_settings is not None:
         lesson.summary
     )
 
-
     # --------------------------------------------------
     # Quiz
     # --------------------------------------------------
@@ -327,3 +347,51 @@ if lesson is not None and lesson_settings is not None:
             st.info(
                 f"**Answer:** {question.answer}"
             )
+            
+            
+    if lesson.follow_up_questions:
+        st.subheader("Folow Up Questions....")
+        
+        for i, question in enumerate (lesson.follow_up_questions, 1):
+            st.markdown(f"**{i}.** {question}")
+            
+            
+    st.divider()
+    
+    st.subheader("Ask Doubts....")
+    
+    for message in st.session_state.chat_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    question = st.chat_input(
+        "Ask anything about this lesson..."
+    )
+
+    if question:
+
+        st.session_state.chat_messages.append({
+            "role": "user",
+            "content": question
+        })
+
+        with st.chat_message("user"):
+            st.markdown(question)
+
+        with st.chat_message("assistant"):
+
+            with st.spinner("Thinking..."):
+
+                answer = answer_doubt(
+                    question,
+                    lesson,
+                    lesson_settings["difficulty"],
+                    st.session_state.chat_messages
+                )
+
+            st.markdown(answer)
+
+        st.session_state.chat_messages.append({
+            "role": "assistant",
+            "content": answer
+        })

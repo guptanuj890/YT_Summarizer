@@ -9,6 +9,7 @@ class Concept(BaseModel):
     name: str
     explanation: str
     sources: list[SourceReference]
+    analogy: str | None = None
     
 class Example(BaseModel):
     description: str
@@ -24,6 +25,8 @@ class LessonDraft(BaseModel):
     examples: list[Example]
     summary: str
     quiz: list[QuizQuestion]
+    key_takeaways: list[str]
+    follow_up_questions: list[str]
     
 
 class ChunkSummary(BaseModel):
