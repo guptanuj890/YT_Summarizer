@@ -19,7 +19,8 @@ def summarize_transcript(
     transcript_text: str,
     difficulty: str,
     include_examples: bool,
-    include_quiz: bool
+    include_quiz: bool,
+    video_type: str
 ) -> LessonDraft:
 
     examples_instruction = (
@@ -52,6 +53,31 @@ KEY TAKEAWAYS:
 - Keep each takeaway concise and easy to scan.
 - Do not simply copy sentences from the transcript.
 - Keep the takeaways separate from the detailed summary.
+
+Video type:
+{video_type}
+
+Adapt the lesson to this type of video.
+
+For a coding tutorial:
+- emphasize implementation steps, code concepts, and practical workflow
+
+For a lecture:
+- emphasize concepts, definitions, relationships, and learning progression
+
+For an interview:
+- organize important ideas around the questions, answers, and insights discussed
+
+For a podcast:
+- organize the lesson around major themes, arguments, and insights
+
+For a conceptual explanation:
+- emphasize intuition, mental models, analogies, and relationships between concepts
+
+For a news or current-events video:
+- clearly separate factual information, explanations, and claims made by speakers
+
+Do not force a structure that does not fit the video's content.
 
 Adapt the lesson to this difficulty:
 
@@ -237,7 +263,8 @@ def synthesize_lesson(
     chunk_summaries: list[ChunkSummary],
     difficulty: str,
     include_examples: bool,
-    include_quiz: bool
+    include_quiz: bool,
+    video_type: str
 ) -> LessonDraft:
 
     examples_instruction = (
@@ -286,6 +313,32 @@ KEY TAKEAWAYS:
 - Do not simply copy sentences from the chunk summaries.
 - Generate the takeaways once at the final lesson level.
 - Keep them separate from the detailed summary.
+
+Video type:
+{video_type}
+
+Adapt the lesson to this type of video.
+
+For a coding tutorial:
+- emphasize implementation steps, code concepts, and practical workflow
+
+For a lecture:
+- emphasize concepts, definitions, relationships, and learning progression
+
+For an interview:
+- organize important ideas around the questions, answers, and insights discussed
+
+For a podcast:
+- organize the lesson around major themes, arguments, and insights
+
+For a conceptual explanation:
+- emphasize intuition, mental models, analogies, and relationships between concepts
+
+For a news or current-events video:
+- clearly separate factual information, explanations, and claims made by speakers
+
+Do not force a structure that does not fit the video's content.
+
 
 Adapt the lesson to this difficulty:
 

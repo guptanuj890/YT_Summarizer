@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from state import LessonState
-from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, format_output_node
+from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, format_output_node, classify_video_node
 from langgraph.types import Send
 from routers import route_for_error, route_strategy, fan_out_chunks
 from db import get_checkpointer
@@ -18,6 +18,7 @@ def build_graph():
     graph.add_node("summarize_chunk", summarize_chunk_node)
     graph.add_node("reduce_synthesize", reduce_synthesize_node)
     graph.add_node("format_output", format_output_node)
+    graph.add_node("classify_video_type", classify_video_node)
     
     graph.add_edge(START, "extract_video_id")
     graph.add_conditional_edges(
@@ -32,10 +33,12 @@ def build_graph():
         "fetch_transcript",
         route_for_error,
         {
-            "success": "count_tokens",
+            "success": "classify_video_type",
             "error": "handle_error"
         }
     )
+    graph.add_edge("fetch_transcript", "classify_video_type")
+    graph.add_edge("classify_video_type", "count_tokens")
     graph.add_edge("count_tokens", "decide_strategy")
     graph.add_conditional_edges(
         "decide_strategy",

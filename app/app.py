@@ -118,6 +118,7 @@ if generate_button:
                 "lesson_draft": None,
                 "final_lesson_md": "",
                 "error": None,
+                "video_type": ""
             }
             
             progress_placeholder = st.empty()
@@ -125,6 +126,7 @@ if generate_button:
             progress_steps = {
                 "extract_video_id": "🎬 Extracting video ID",
                 "fetch_transcript": "📝 Fetching transcript",
+                "classify_video_type": "Understanding video type",
                 "count_tokens": "🔢 Counting tokens",
                 "decide_strategy": "🧠 Selecting processing strategy",
                 "chunk_transcript": "✂️ Splitting transcript",

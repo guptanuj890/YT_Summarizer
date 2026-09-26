@@ -7,6 +7,7 @@ from llm import summarize_transcript, summarize_chunk, synthesize_lesson
 from chunking import chunk_transcript
 from formatter import format_lesson_markdown
 from cache import TranscriptCache
+from classifier import classify_video
 
 cache = TranscriptCache()
 
@@ -80,7 +81,7 @@ def decide_strategy_node(state: LessonState)-> LessonState:
     }
 
 def summarize_direct_node(state: LessonState)->LessonState:
-    lesson = summarize_transcript(state["transcript_text"], state["difficulty"], state["include_examples"], state["include_quiz"])
+    lesson = summarize_transcript(state["transcript_text"], state["difficulty"], state["include_examples"], state["include_quiz"], state["video_type"])
     
     if not state["include_examples"]:
         lesson.examples = []
@@ -111,7 +112,8 @@ def summarize_chunk_node(state: ChunkState):
         state["chunk"],
         state["difficulty"],
         state["include_examples"],
-        state["include_quiz"]
+        state["include_quiz"],
+        state["video_type"]
     )
     
     return{
@@ -146,4 +148,14 @@ def format_output_node(state: LessonState)-> LessonState:
     return{
         **state,
         "final_lesson_md": markdown
+    }
+    
+def classify_video_node(state: LessonState)-> LessonState:
+    result = classify_video(
+        state["transcript_text"]
+    )
+    
+    return {
+        **state,
+        "video_type": result.choice
     }

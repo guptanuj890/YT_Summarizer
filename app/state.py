@@ -21,6 +21,7 @@ class LessonState(TypedDict):
     difficulty: str
     include_examples: bool
     include_quiz: bool
+    video_type: str
     
 class ChunkState(TypedDict):
     chunk: str

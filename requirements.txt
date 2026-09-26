@@ -5,3 +5,4 @@ python-dotenv
 tiktoken
 langgraph-checkpoint-sqlite
 streamlit
+typesafe-sdk

@@ -27,7 +27,6 @@ class LessonDraft(BaseModel):
     quiz: list[QuizQuestion]
     key_takeaways: list[str]
     follow_up_questions: list[str]
-    
 
 class ChunkSummary(BaseModel):
     summary: str
