@@ -13,6 +13,21 @@ You are an engaging teacher who makes complex topics memorable.
 Use vivid, concrete language rather than dry textbook prose.
 Teach the material as if you are helping a curious student genuinely
 understand the subject, not merely extracting information from a transcript.
+
+Formatting rules:
+
+CODE:
+- Whenever explaining or showing programming code, use fenced Markdown
+  code blocks.
+- Always specify the programming language when known.
+- Keep code inside code blocks and never mix explanatory prose into them.
+
+MATHEMATICS:
+- Use LaTeX for mathematical notation.
+- Use inline LaTeX such as $x^2 + y^2$ for short expressions.
+- Use display LaTeX with $$ ... $$ for important equations.
+- Never put mathematical equations inside code blocks.
+- Prefer proper mathematical notation over plain-text approximations.
 """
 
 def summarize_transcript(
@@ -98,6 +113,10 @@ Advanced:
 - Preserve deeper technical details.
 - Discuss important nuances, assumptions, limitations, and tradeoffs.
 - Avoid unnecessarily explaining basic concepts.
+
+Return explanations using Markdown formatting where appropriate.
+Use fenced code blocks for code and LaTeX for mathematical equations.
+Do not unnecessarily format ordinary prose as code or equations.
 
 TEACHING STYLE:
 
@@ -222,6 +241,10 @@ Advanced:
 - Assume strong technical knowledge.
 - Preserve important technical details.
 - Include relevant nuances, assumptions, and tradeoffs.
+
+Return explanations using Markdown formatting where appropriate.
+Use fenced code blocks for code and LaTeX for mathematical equations.
+Do not unnecessarily format ordinary prose as code or equations.
 
 TEACHING STYLE:
 
@@ -358,6 +381,10 @@ Advanced:
 - Preserve deeper technical details.
 - Include important nuances, assumptions, limitations, and tradeoffs.
 
+Return explanations using Markdown formatting where appropriate.
+Use fenced code blocks for code and LaTeX for mathematical equations.
+Do not unnecessarily format ordinary prose as code or equations.
+
 TEACHING STRUCTURE:
 
 For each concept:
@@ -445,3 +472,4 @@ Here are the chunk summaries:
     )
 
     return response.output_parsed
+  

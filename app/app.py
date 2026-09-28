@@ -2,7 +2,11 @@ import streamlit as st
 import uuid
 
 from graph import build_graph
-from chat import answer_doubt
+from chat import answer_doubt, summarize_chat_history
+from history import LessonHistory
+from schema import LessonDraft
+
+history = LessonHistory()
 
 
 st.set_page_config(
@@ -28,6 +32,12 @@ if "lesson_settings" not in st.session_state:
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 
+if "chat_summary" not in st.session_state:
+    st.session_state.chat_summary = ""
+    
+if "lesson_db_id" not in st.session_state:
+    st.session_state.lesson_db_id = None
+    
 # --------------------------------------------------
 # Graph
 # --------------------------------------------------
@@ -67,6 +77,60 @@ include_quiz = st.sidebar.checkbox(
     "Include Quiz",
     value=True
 )
+
+st.sidebar.divider()
+
+st.sidebar.header("📚 Lesson History")
+
+saved_lessons = history.get_lessons()
+
+if not saved_lessons:
+
+    st.sidebar.caption("No saved lessons yet.")
+
+else:
+
+    for saved_lesson in saved_lessons:
+
+        if st.sidebar.button(
+            saved_lesson["title"],
+            key=f"history_{saved_lesson['id']}"
+        ):
+
+            selected_lesson = history.get_lesson(
+                saved_lesson["id"]
+            )
+
+            st.session_state.lesson = (
+                LessonDraft.model_validate_json(
+                    selected_lesson["lesson"]
+                )
+            )
+
+            st.session_state.video_id = (
+                selected_lesson["video_id"]
+            )
+
+            st.session_state.lesson_db_id = (
+                saved_lesson["id"]
+            )
+
+            st.session_state.lesson_settings = {
+                "difficulty": selected_lesson["difficulty"],
+                "include_examples": True,
+                "include_quiz": True,
+            }
+
+            # Restore doubt chat
+            st.session_state.chat_messages = (
+                selected_lesson["chat_messages"]
+            )
+
+            st.session_state.chat_summary = (
+                selected_lesson["chat_summary"]
+            )
+
+            st.rerun()
 
 
 # --------------------------------------------------
@@ -179,32 +243,33 @@ if generate_button:
                 st.error(result["error"])
 
             else:
-
                 status.update(
                     label="Lesson generated!",
                     state="complete"
                 )
 
-                # ------------------------------------------
-                # Save generated lesson
-                # ------------------------------------------
-
                 st.session_state.lesson = result["lesson_draft"]
 
                 st.session_state.video_id = result["video_id"]
 
-                # IMPORTANT:
-                # Save the settings that were actually used
-                # for this generated lesson.
                 st.session_state.lesson_settings = {
                     "difficulty": result["difficulty"],
                     "include_examples": result["include_examples"],
                     "include_quiz": result["include_quiz"],
                 }
 
-                st.success(
-                    "Your lesson is ready!"
+                # Save lesson to persistent history
+                lesson_db_id = history.save_lesson(
+                    video_id=result["video_id"],
+                    video_url=result["video_url"],
+                    lesson=result["lesson_draft"],
+                    difficulty=result["difficulty"],
+                    video_type=result["video_type"],
                 )
+                
+                st.session_state.lesson_db_id = lesson_db_id
+
+                st.success("Your lesson is ready!")
 
 
 # --------------------------------------------------
@@ -255,7 +320,7 @@ if lesson is not None and lesson_settings is not None:
             f"### {concept.name}"
         )
 
-        st.write(
+        st.markdown(
             concept.explanation
         )
 
@@ -324,7 +389,7 @@ if lesson is not None and lesson_settings is not None:
 
     st.subheader("📝 Summary")
 
-    st.write(
+    st.markdown(
         lesson.summary
     )
 
@@ -372,11 +437,6 @@ if lesson is not None and lesson_settings is not None:
 
     if question:
 
-        st.session_state.chat_messages.append({
-            "role": "user",
-            "content": question
-        })
-
         with st.chat_message("user"):
             st.markdown(question)
 
@@ -388,12 +448,36 @@ if lesson is not None and lesson_settings is not None:
                     question,
                     lesson,
                     lesson_settings["difficulty"],
-                    st.session_state.chat_messages
+                    st.session_state.chat_messages,
+                    st.session_state.chat_summary
                 )
 
-            st.markdown(answer)
+                st.session_state.chat_messages.append({
+                    "role": "user",
+                    "content": question
+                })
 
-        st.session_state.chat_messages.append({
-            "role": "assistant",
-            "content": answer
-        })
+                st.session_state.chat_messages.append({
+                    "role": "assistant",
+                    "content": answer
+                })
+                
+                history.update_chat(
+                    lesson_id=st.session_state.lesson_db_id,
+                    chat_messages=st.session_state.chat_messages,
+                    chat_summary=st.session_state.chat_summary
+                )
+
+                if len(st.session_state.chat_messages) > 12:
+
+                    old_messages = st.session_state.chat_messages[:-12]
+
+                    st.session_state.chat_summary = summarize_chat_history(
+                        old_messages
+                    )
+
+                    st.session_state.chat_messages = (
+                        st.session_state.chat_messages[-12:]
+                    )
+
+            st.markdown(answer)
