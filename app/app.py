@@ -5,6 +5,7 @@ from graph import build_graph
 from chat import answer_doubt, summarize_chat_history
 from history import LessonHistory
 from schema import LessonDraft
+from exporter import lesson_to_markdown, safe_filename, lesson_to_pdf
 
 history = LessonHistory()
 
@@ -286,6 +287,37 @@ if lesson is not None and lesson_settings is not None:
     st.divider()
 
     st.header(lesson.title)
+    
+    markdown_content = lesson_to_markdown(
+        lesson,
+        video_id,
+        st.session_state.chat_messages
+    )
+
+    st.download_button(
+        label="📥 Download Markdown",
+        data=markdown_content,
+        file_name=f"{safe_filename(lesson.title)}.md",
+        mime="text/markdown"
+    )
+    
+    pdf_path = "lesson.pdf"
+
+    lesson_to_pdf(
+        lesson,
+        video_id,
+        st.session_state.chat_messages,
+        pdf_path
+    )
+
+    with open(pdf_path, "rb") as pdf_file:
+        st.download_button(
+            label="📄 Download PDF",
+            data=pdf_file,
+            file_name=f"{safe_filename(lesson.title)}.pdf",
+            mime="application/pdf"
+        )
+    
     # --------------------------------------------------
     # Key Takeaways
     # --------------------------------------------------
@@ -481,3 +513,5 @@ if lesson is not None and lesson_settings is not None:
                     )
 
             st.markdown(answer)
+
+

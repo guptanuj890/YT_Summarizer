@@ -6,3 +6,4 @@ tiktoken
 langgraph-checkpoint-sqlite
 streamlit
 typesafe-sdk
+reportlab
