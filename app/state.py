@@ -22,9 +22,11 @@ class LessonState(TypedDict):
     include_examples: bool
     include_quiz: bool
     video_type: str
+    chunk_errors: Annotated[list[str], operator.add]
     
 class ChunkState(TypedDict):
     chunk: str
     difficulty: str
     include_examples: bool
     include_quiz: bool
+    chunk_errors: list[str]

@@ -118,8 +118,12 @@ else:
 
             st.session_state.lesson_settings = {
                 "difficulty": selected_lesson["difficulty"],
-                "include_examples": True,
-                "include_quiz": True,
+                "include_examples": bool(
+                    st.session_state.lesson.examples
+                ),
+                "include_quiz": bool(
+                    st.session_state.lesson.quiz
+                ),
             }
 
             # Restore doubt chat
@@ -386,7 +390,7 @@ if lesson is not None and lesson_settings is not None:
     # Examples
     # --------------------------------------------------
 
-    if lesson_settings["include_examples"]:
+    if lesson.examples:
 
         st.subheader("💡 Examples")
 
@@ -429,7 +433,7 @@ if lesson is not None and lesson_settings is not None:
     # Quiz
     # --------------------------------------------------
 
-    if lesson_settings["include_quiz"]:
+    if lesson.quiz:
 
         st.subheader("🧠 Quiz")
 
@@ -468,12 +472,10 @@ if lesson is not None and lesson_settings is not None:
     )
 
     if question:
-
         with st.chat_message("user"):
             st.markdown(question)
 
         with st.chat_message("assistant"):
-
             with st.spinner("Thinking..."):
 
                 answer = answer_doubt(
@@ -493,24 +495,27 @@ if lesson is not None and lesson_settings is not None:
                     "role": "assistant",
                     "content": answer
                 })
-                
-                history.update_chat(
-                    lesson_id=st.session_state.lesson_db_id,
-                    chat_messages=st.session_state.chat_messages,
-                    chat_summary=st.session_state.chat_summary
-                )
 
+                # Trim only after the new messages have been added
                 if len(st.session_state.chat_messages) > 12:
 
                     old_messages = st.session_state.chat_messages[:-12]
 
                     st.session_state.chat_summary = summarize_chat_history(
-                        old_messages
+                        old_messages,
+                        st.session_state.chat_summary
                     )
 
                     st.session_state.chat_messages = (
                         st.session_state.chat_messages[-12:]
                     )
+
+                # Save the FINAL state
+                history.update_chat(
+                    lesson_id=st.session_state.lesson_db_id,
+                    chat_messages=st.session_state.chat_messages,
+                    chat_summary=st.session_state.chat_summary
+                )
 
             st.markdown(answer)
 

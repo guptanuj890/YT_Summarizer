@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SourceReference(BaseModel):
@@ -25,8 +25,8 @@ class LessonDraft(BaseModel):
     examples: list[Example]
     summary: str
     quiz: list[QuizQuestion]
-    key_takeaways: list[str]
-    follow_up_questions: list[str]
+    key_takeaways: list[str] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
 
 class ChunkSummary(BaseModel):
     summary: str

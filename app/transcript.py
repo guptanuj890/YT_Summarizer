@@ -50,3 +50,9 @@ def transcript_to_text(segments):
         segment["text"]
         for segment in segments
     )
+    
+def transcript_to_timestamped_text(segments):
+    return "\n".join(
+        f"[{segment['start']:.1f}s] {segment['text']}"
+        for segment in segments
+    )

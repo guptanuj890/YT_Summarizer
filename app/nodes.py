@@ -1,6 +1,6 @@
 from state import LessonState, ChunkState
 from youtube import extract_video_id
-from transcript import fetch_transcript, transcript_to_text
+from transcript import fetch_transcript, transcript_to_timestamped_text
 from tokenizer import count_tokens
 from strategy import decide_strategy
 from llm import summarize_transcript, summarize_chunk, synthesize_lesson
@@ -53,9 +53,7 @@ def fetch_transcript_node(state: LessonState)->LessonState:
                 "error": str(e)
             }
             
-    transcript_text = transcript_to_text(
-        raw_transcript
-    )
+    transcript_text = transcript_to_timestamped_text(raw_transcript)
     
     return {
         **state,
@@ -108,17 +106,26 @@ def handle_error_node(state: LessonState)->LessonState:
     return state
 
 def summarize_chunk_node(state: ChunkState):
-    summary = summarize_chunk(
-        state["chunk"],
-        state["difficulty"],
-        state["include_examples"],
-        state["include_quiz"],
-        state["video_type"]
-    )
-    
-    return{
-        "chunk_summaries": [summary]
-    }
+    try:
+        summary = summarize_chunk(
+            state["chunk"],
+            state["difficulty"],
+            state["include_examples"],
+            state["include_quiz"],
+        )
+
+        return {
+            "chunk_summaries": [summary],
+            "chunk_errors": [],
+        }
+
+    except Exception as e:
+        return {
+            "chunk_summaries": [],
+            "chunk_errors": [
+                f"Failed to process transcript chunk: {str(e)}"
+            ],
+        }
     
 def reduce_synthesize_node(state:LessonState)-> LessonState:
     
@@ -126,7 +133,8 @@ def reduce_synthesize_node(state:LessonState)-> LessonState:
         state["chunk_summaries"],
         state["difficulty"],
         state["include_examples"],
-        state["include_quiz"]
+        state["include_quiz"],
+        state["video_type"]
     )
     
     return {
@@ -158,4 +166,19 @@ def classify_video_node(state: LessonState)-> LessonState:
     return {
         **state,
         "video_type": result.choice
+    }
+    
+def check_chunk_errors_node(state: LessonState) -> LessonState:
+    if state.get("chunk_errors"):
+        return {
+            **state,
+            "error": (
+                f"{len(state['chunk_errors'])} transcript chunk(s) failed. "
+                + " | ".join(state["chunk_errors"])
+            ),
+        }
+
+    return {
+        **state,
+        "error": None,
     }

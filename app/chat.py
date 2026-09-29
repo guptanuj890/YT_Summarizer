@@ -83,32 +83,52 @@ Teaching rules:
 
     return response.output_text
 
-def summarize_chat_history(chat_history: list) -> str:
-    if not chat_history:
+def summarize_chat_history(
+    chat_history: list,
+    existing_summary: str = ""
+) -> str:
+
+    if not chat_history and not existing_summary:
         return ""
-    
+
     conversation = "\n".join(
         f"{message['role'].upper()}: {message['content']}"
         for message in chat_history
     )
-    
+
+    prompt = f"""
+You are maintaining memory for a student-teacher conversation.
+
+Previous conversation summary:
+{existing_summary}
+
+New conversation messages:
+{conversation}
+
+Create an updated concise conversation summary.
+
+Preserve:
+- concepts the student asked about
+- explanations already given
+- misunderstandings or areas of confusion
+- examples that were discussed
+- important conclusions
+- terminology introduced
+
+Combine important information from the previous summary with the
+new conversation messages.
+
+Do not remove important context merely because it appeared in
+the previous summary.
+
+Do not add new information.
+Keep the summary concise and useful for continuing the conversation.
+"""
+
     response = client.responses.create(
-        model = "gpt-4o-mini",
-        instructions = """
-        
-        Summarize this student-teacher conversation.
-        
-        Preserve:
-        - concepts the student asked about
-        - explanations already given
-        - misunderstandings or areas of confusion
-        - examples that were discussed
-        - important conclusions
-        - terminology introduced
-        
-        Do not add new information.
-        Keep the summary concise and useful for continuing the conversation.
-        """,
-        input = conversation      
+        model="gpt-4o-mini",
+        instructions=prompt,
+        input=conversation
     )
+
     return response.output_text

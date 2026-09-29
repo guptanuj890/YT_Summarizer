@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI 
 from schema import LessonDraft, ChunkSummary
+import time
 
 load_dotenv()
 
@@ -29,6 +30,29 @@ MATHEMATICS:
 - Never put mathematical equations inside code blocks.
 - Prefer proper mathematical notation over plain-text approximations.
 """
+
+
+MAX_LLM_RETRIES = 3
+
+
+def retry_llm_call(call):
+    last_error = None
+
+    for attempt in range(MAX_LLM_RETRIES):
+        try:
+            return call()
+
+        except Exception as e:
+            last_error = e
+
+            if attempt == MAX_LLM_RETRIES - 1:
+                raise
+
+            wait_time = 2 ** attempt
+            time.sleep(wait_time)
+
+    raise last_error
+
 
 def summarize_transcript(
     transcript_text: str,
@@ -186,14 +210,23 @@ Create a coherent lesson that teaches the material rather than merely
 extracting information from the transcript.
 """
 
-    response = client.responses.parse(
-        model="gpt-4o",
-        instructions=instructions,
-        input=transcript_text,
-        text_format=LessonDraft,
-    )
+    def call():
+      response = client.responses.parse(
+          model="gpt-4o",
+          instructions=instructions,
+          input=transcript,
+          text_format=LessonDraft,
+      )
 
-    return response.output_parsed
+      if response.output_parsed is None:
+          raise ValueError(
+              "LLM returned no structured lesson output."
+          )
+
+      return response.output_parsed
+
+
+    return retry_llm_call(call)
 
 def summarize_chunk(
     chunk: str,
@@ -273,14 +306,23 @@ For every important concept or explanation:
 Only include information supported by this transcript chunk.
 """
 
-    response = client.responses.parse(
-        model="gpt-4o-mini",
-        instructions=instructions,
-        input=chunk,
-        text_format=ChunkSummary,
-    )
+    def call():
+      response = client.responses.parse(
+          model="gpt-4o",
+          instructions=instructions,
+          input=chunk,
+          text_format=ChunkSummary,
+      )
 
-    return response.output_parsed
+      if response.output_parsed is None:
+          raise ValueError(
+              "LLM returned no structured chunk summary."
+          )
+
+      return response.output_parsed
+
+
+    return retry_llm_call(call)
 
 def synthesize_lesson(
     chunk_summaries: list[ChunkSummary],
