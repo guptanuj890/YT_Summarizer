@@ -501,9 +501,6 @@ IMPORTANT:
 - Preserve important details even while making the lesson concise.
 - Produce a coherent lesson from beginning to end.
 
-Here are the chunk summaries:
-
-{summaries_text}
 """
 
     response = client.responses.parse(

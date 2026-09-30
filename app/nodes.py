@@ -137,6 +137,12 @@ def reduce_synthesize_node(state:LessonState)-> LessonState:
         state["video_type"]
     )
     
+    if not state["include_examples"]:
+        lesson.examples = []
+
+    if not state["include_quiz"]:
+        lesson.quiz = []
+    
     return {
         **state,
         "lesson_draft": lesson

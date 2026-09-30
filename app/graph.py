@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from state import LessonState
-from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, format_output_node, classify_video_node
+from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, format_output_node, classify_video_node, check_chunk_errors_node
 from langgraph.types import Send
 from routers import route_for_error, route_strategy, fan_out_chunks, route_after_chunks
 from db import get_checkpointer
@@ -55,7 +55,7 @@ def build_graph():
 
     graph.add_conditional_edges(
         "check_chunk_errors",
-        route_on_error,
+        route_for_error,
         {
             "success": "reduce_synthesize",
             "error": "handle_error",
