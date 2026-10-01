@@ -5,7 +5,6 @@ from tokenizer import count_tokens
 from strategy import decide_strategy
 from llm import summarize_transcript, summarize_chunk, synthesize_lesson
 from chunking import chunk_transcript
-from formatter import format_lesson_markdown
 from cache import TranscriptCache
 from classifier import classify_video
 
@@ -146,22 +145,6 @@ def reduce_synthesize_node(state:LessonState)-> LessonState:
     return {
         **state,
         "lesson_draft": lesson
-    }
-    
-def format_output_node(state: LessonState)-> LessonState:
-    lesson = state["lesson_draft"]
-    
-    if lesson is None:
-        raise ValueError("No lesson draft available")
-    
-    markdown = format_lesson_markdown(
-        lesson,
-        state["video_id"]
-    )
-    
-    return{
-        **state,
-        "final_lesson_md": markdown
     }
     
 def classify_video_node(state: LessonState)-> LessonState:

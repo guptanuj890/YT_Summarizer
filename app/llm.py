@@ -214,7 +214,7 @@ extracting information from the transcript.
       response = client.responses.parse(
           model="gpt-4o",
           instructions=instructions,
-          input=transcript,
+          input=transcript_text,
           text_format=LessonDraft,
       )
 

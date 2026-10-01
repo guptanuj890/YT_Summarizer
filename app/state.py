@@ -16,7 +16,6 @@ class LessonState(TypedDict):
         list[ChunkSummary],
         operator.add
     ]
-    final_lesson_md: str
     
     difficulty: str
     include_examples: bool

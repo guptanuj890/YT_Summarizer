@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from state import LessonState
-from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, format_output_node, classify_video_node, check_chunk_errors_node
+from nodes import extract_video_id_node, fetch_transcript_node, handle_error_node, count_tokens_node, decide_strategy_node, summarize_direct_node, chunk_transcript_node, summarize_chunk_node, reduce_synthesize_node, classify_video_node, check_chunk_errors_node
 from langgraph.types import Send
 from routers import route_for_error, route_strategy, fan_out_chunks, route_after_chunks
 from db import get_checkpointer
@@ -18,7 +18,6 @@ def build_graph():
     graph.add_node("summarize_chunk", summarize_chunk_node)
     graph.add_node("check_chunk_errors", check_chunk_errors_node)
     graph.add_node("reduce_synthesize", reduce_synthesize_node)
-    graph.add_node("format_output", format_output_node)
     graph.add_node("classify_video_type", classify_video_node)
     
     graph.add_edge(START, "extract_video_id")
@@ -48,7 +47,6 @@ def build_graph():
             "chunked": "chunk_transcript"
         }
     )
-    graph.add_edge("summarize_direct", "format_output")
     graph.add_conditional_edges("chunk_transcript", fan_out_chunks)
 
     graph.add_edge("summarize_chunk", "check_chunk_errors")
@@ -62,8 +60,7 @@ def build_graph():
         },
     )
 
-    graph.add_edge("reduce_synthesize", "format_output")
-    graph.add_edge("format_output", END)
+    graph.add_edge("reduce_synthesize", END)
     graph.add_edge("handle_error", END)
     
     checkpointer = get_checkpointer()

@@ -7,7 +7,11 @@ from history import LessonHistory
 from schema import LessonDraft
 from exporter import lesson_to_markdown, safe_filename, lesson_to_pdf
 
-history = LessonHistory()
+@st.cache_resource
+def get_history():
+    return LessonHistory()
+
+history = get_history()
 
 
 st.set_page_config(
@@ -43,7 +47,11 @@ if "lesson_db_id" not in st.session_state:
 # Graph
 # --------------------------------------------------
 
-graph = build_graph()
+@st.cache_resource
+def get_app_graph():
+    return build_graph()
+
+graph = get_app_graph()
 
 
 # --------------------------------------------------
