@@ -4,7 +4,6 @@ from youtube_transcript_api._errors import (
     NoTranscriptFound,
 )
 
-
 def fetch_transcript(video_id: str, languages=None):
 
     if languages is None:
@@ -26,7 +25,7 @@ def fetch_transcript(video_id: str, languages=None):
                 "start": segment.start,
                 "duration": segment.duration
             })
-
+            
         return segments
 
     except TranscriptsDisabled:
@@ -50,6 +49,7 @@ def transcript_to_text(segments):
         segment["text"]
         for segment in segments
     )
+    
     
 def transcript_to_timestamped_text(segments):
     return "\n".join(

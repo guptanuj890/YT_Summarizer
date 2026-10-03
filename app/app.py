@@ -218,33 +218,67 @@ if generate_button:
 
             completed_steps = []
             
+            
+            if "generation_count" not in st.session_state:
+                st.session_state.generation_count = 0
 
-            for event in graph.stream(
-                initial_state,
-                config={
-                    "configurable": {
-                        "thread_id": str(uuid.uuid4())
-                    }
-                },
-                stream_mode="updates"
-            ):
+            MAX_GENERATIONS_PER_SESSION = 5
 
-                for node_name, update in event.items():
+            if st.session_state.generation_count >= MAX_GENERATIONS_PER_SESSION:
+                st.warning(
+                    "You've reached the lesson generation limit for this session."
+                )
+                st.stop()
 
-                    if node_name in progress_steps:
-                        step_name = progress_steps[node_name]
+            st.session_state.generation_count += 1
 
-                        if step_name not in completed_steps:
-                            completed_steps.append(step_name)
+            try:
+                for event in graph.stream(
+                    initial_state,
+                    config={
+                        "configurable": {
+                            "thread_id": str(uuid.uuid4())
+                        }
+                    },
+                    stream_mode="updates"
+                ):
 
-                    result.update(update)
+                    for node_name, update in event.items():
 
-                    progress_placeholder.markdown(
-                        "\n".join(
-                            f"✅ {step}"
-                            for step in completed_steps
+                        if node_name in progress_steps:
+                            step_name = progress_steps[node_name]
+
+                            if step_name not in completed_steps:
+                                completed_steps.append(step_name)
+
+                        result.update(update)
+
+                        progress_placeholder.markdown(
+                            "\n".join(
+                                f"✅ {step}"
+                                for step in completed_steps
+                            )
                         )
-                    )
+                        
+                        
+            except ValueError as e:
+                status.update(
+                    label="Generation failed",
+                    state="error"
+                )
+                st.warning(str(e))
+                st.stop()
+
+            except Exception:
+                status.update(
+                    label="Generation failed",
+                    state="error"
+                )
+                st.error(
+                    "Something went wrong while generating the lesson. "
+                    "Please try again."
+                )
+                st.stop()
 
             if result["error"]:
 

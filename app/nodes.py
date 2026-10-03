@@ -9,7 +9,7 @@ from cache import TranscriptCache
 from classifier import classify_video
 
 cache = TranscriptCache()
-
+MAX_CHUNKS_PER_VIDEO = 10
 
 def extract_video_id_node(state: LessonState)->LessonState:
     try:
@@ -34,7 +34,7 @@ def fetch_transcript_node(state: LessonState)->LessonState:
     
     if raw_transcript is not None:
         print("Transcript loaded from cache.")
-        
+    
     else:
         try:
             raw_transcript = fetch_transcript(state["video_id"])
@@ -93,6 +93,13 @@ def summarize_direct_node(state: LessonState)->LessonState:
 
 def chunk_transcript_node(state: LessonState)->LessonState:
     chunks = chunk_transcript(state["raw_transcript"])
+    
+    if len(chunks) > MAX_CHUNKS_PER_VIDEO:
+        raise ValueError(
+            f"This video is too long to process in one run. "
+            f"It produced {len(chunks)} chunks, but the limit is "
+            f"{MAX_CHUNKS_PER_VIDEO}. Try a shorter video."
+        )
     
     return {
         **state,
