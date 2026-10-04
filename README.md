@@ -4,7 +4,7 @@ Turn any YouTube video into a structured, readable lesson — no watching requir
 
 Paste a link, and the agent fetches the transcript, classifies the type of video it's dealing with, and generates a complete lesson: key concepts with analogies, examples, a summary, a quiz, and follow-up questions — every claim linked back to the exact timestamp it came from. You can then ask follow-up questions about the lesson in a chat interface, and export the result as Markdown or PDF.
 
-Built with **LangGraph** to explore agentic, graph-based orchestration — conditional routing, parallel map-reduce, and per-branch error handling — rather than a single linear prompt chain.
+Built with **LangGraph** to explore agentic, graph-based orchestration — conditional routing, parallel map-reduce, and per-branch error handling — rather than a single linear prompt chain, with guardrails treated as a first-class part of the design rather than an afterthought.
 
 ---
 
@@ -22,9 +22,24 @@ Built with **LangGraph** to explore agentic, graph-based orchestration — condi
 - **Lesson history** — every generated lesson (and its chat thread) is saved to SQLite and can be reopened later from the sidebar.
 - **Export to Markdown or PDF** — download the finished lesson, including the chat thread, in either format.
 - **Structured, not freeform** — every LLM call returns a typed Pydantic schema, so output is consistent across every run.
-- **Resilient by design** — LLM calls retry with backoff on transient failures; if one transcript chunk fails during a long video, the agent reports it as an error rather than silently producing an incomplete lesson.
+- **Resilient by design** — every LLM call (lesson generation *and* chat) retries with backoff on transient failures and fails gracefully with a friendly message rather than a raw traceback; if one transcript chunk fails during a long video, the agent reports it as an error rather than silently producing an incomplete lesson; if chat history fails to save, the conversation still continues uninterrupted.
 - **Transcript caching** — transcripts are cached by video ID in SQLite, so re-running on the same video skips the YouTube fetch entirely.
 - **Resumable runs** — LangGraph's SQLite checkpointer persists graph state by thread ID.
+
+---
+
+## 🛡️ Safety & Guardrails
+
+A YouTube transcript is content the agent doesn't control, and the chat feature takes direct freeform input from users — both are treated as untrusted surfaces throughout the pipeline, not just sanitized once at the edge.
+
+- **Prompt-injection resistant.** Every LLM call that touches transcript content — direct summarization, chunk summarization, final synthesis, and video-type classification — explicitly instructs the model to treat the transcript as untrusted source material and ignore any instructions, role-override attempts, or commands embedded within it. If a video *discusses* prompt injection as its subject matter, the model is told to explain it as content, not act on it.
+- **Untrusted data kept out of the instruction channel.** Transcript text, chunk summaries, chat history, and conversation summaries are passed as `input`, never concatenated into the trusted `instructions` string — keeping the model's actual behavior rules separate from anything an external source (video or user) could influence. Prior conversation data passed back into future chat turns is explicitly wrapped and labeled as untrusted data for the same reason: a rolling summary is a persistence mechanism, so it gets the same scrutiny as a live message.
+- **Scoped chat.** The chat assistant is instructed to answer only questions related to the current lesson, and to decline — rather than attempt — anything that asks it to change role, reveal hidden instructions, or act outside that scope.
+- **Output moderation.** Every chat response is checked against OpenAI's moderation endpoint before being shown to the user; a flagged response is replaced with a generic message instead of being displayed.
+- **Input validation.** Chat messages are length-capped and empty submissions are rejected before reaching the model.
+- **Cost ceilings.** A maximum-chunks-per-video limit prevents an extremely long video from fanning out into an unbounded number of parallel LLM calls, and a per-session generation limit caps how many lessons a single session can request.
+- **No internal error leakage.** Failures from the LLM provider are logged by exception type only (never the raw message or request payload) and surfaced to the user as a generic, friendly error — avoiding accidental exposure of internals, stack traces, or request data.
+- **Fail-soft, not fail-hard.** A failure in chat history summarization or persistence doesn't block the conversation — the user still sees their answer, with a warning that history wasn't saved, rather than losing the interaction entirely.
 
 
 ---
@@ -75,7 +90,7 @@ app/
 ├── schema.py           # Pydantic models for structured LLM output
 ├── llm.py            # OpenAI calls — direct / chunk summarize, synthesis, retry logic
 ├── classifier.py        # Video-type classification (tutorial, interview, etc.)
-├── chat.py            # "Ask doubts" chat — answering + conversation summarization
+├── chat.py            # "Ask doubts" chat — answering, moderation, and conversation summarization
 ├── history.py          # SQLite-backed lesson + chat history
 ├── exporter.py          # Renders the lesson (+ chat) to Markdown and PDF
 ├── youtube.py          # Video ID extraction from any YouTube URL format, with validation
@@ -96,7 +111,8 @@ app/
 | Layer | Choice | Why |
 |---|---|---|
 | Orchestration | [LangGraph](https://github.com/langchain-ai/langgraph) | Graph-based state machine — needed for conditional routing, parallel chunk fan-out, and per-branch error aggregation, which a linear chain can't express cleanly |
-| LLM | OpenAI API (`gpt-4o` for direct summarization and final synthesis, chunk-level summarization tuned separately) | Structured, typed output via `client.responses.parse` instead of parsing freeform text |
+| LLM | OpenAI API (`gpt-4o` for direct summarization, final synthesis, and chat; `gpt-4o-mini` for chat summarization) | Structured, typed output via `client.responses.parse` instead of parsing freeform text |
+| Safety | OpenAI Moderation API (`omni-moderation-latest`) | Screens chat responses before they're shown to the user |
 | Video classification | [TypeSafe AI SDK](https://docs.typesafe.ai/sdk/python/) | Constrained multi-class classification of video type, used to adapt lesson structure |
 | Structured output | Pydantic | Typed, validated output instead of parsing freeform text |
 | Transcript source | [`youtube-transcript-api`](https://github.com/jdepoix/youtube-transcript-api) | No YouTube API key required |
@@ -154,7 +170,7 @@ Then open the local URL Streamlit prints (usually `http://localhost:8501`), past
 | Include Examples | On / Off | Extracts case studies and demonstrations mentioned in the video |
 | Include Quiz | On / Off | Generates self-test questions from the video's content |
 
-`DIRECT_TOKEN_LIMIT` in `strategy.py` (default `6000`) controls the cutoff between direct summarization and the chunked map-reduce path. `CHUNK_TOKEN_LIMIT` in `chunking.py` (default `4000`) controls how large each parallel chunk is. Adjust either for finer control over cost vs. quality.
+`DIRECT_TOKEN_LIMIT` in `strategy.py` (default `6000`) controls the cutoff between direct summarization and the chunked map-reduce path. `CHUNK_TOKEN_LIMIT` in `chunking.py` controls how large each parallel chunk is. `MAX_CHUNKS_PER_VIDEO` in `nodes.py` and `MAX_GENERATIONS_PER_SESSION` in `app.py` control the cost/abuse guardrails described above. Adjust any of these for finer control over cost vs. quality.
 
 ---
 
@@ -166,7 +182,9 @@ Then open the local URL Streamlit prints (usually `http://localhost:8501`), past
 - [ ] Non-English transcript support with translation before processing
 - [ ] Human-in-the-loop review step before final formatting (via LangGraph's `interrupt`)
 - [ ] LangSmith tracing for per-node latency and token usage visibility
+- [ ] Automated eval suite — golden-set regression tests for lesson quality, plus a concrete prompt-injection test (e.g. assert a transcript line like "ignore previous instructions" never leaks into output)
 - [ ] Automated tests for the pure functions (URL parsing, chunking, routing logic)
+- [ ] Moderation/validation on chat *input*, not just model output
 
 ---
 
