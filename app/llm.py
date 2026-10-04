@@ -4,7 +4,6 @@ from openai import OpenAI
 from schema import LessonDraft, ChunkSummary
 import time
 import logging
-import time
 
 logger = logging.getLogger(__name__)
 

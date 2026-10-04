@@ -6,6 +6,10 @@ from chat import answer_doubt, summarize_chat_history
 from history import LessonHistory
 from schema import LessonDraft
 from exporter import lesson_to_markdown, safe_filename, lesson_to_pdf
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @st.cache_resource
 def get_history():
@@ -520,45 +524,79 @@ if lesson is not None and lesson_settings is not None:
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
 
-                answer = answer_doubt(
-                    question,
-                    lesson,
-                    lesson_settings["difficulty"],
-                    st.session_state.chat_messages,
-                    st.session_state.chat_summary
-                )
-
-                st.session_state.chat_messages.append({
-                    "role": "user",
-                    "content": question
-                })
-
-                st.session_state.chat_messages.append({
-                    "role": "assistant",
-                    "content": answer
-                })
-
-                # Trim only after the new messages have been added
-                if len(st.session_state.chat_messages) > 12:
-
-                    old_messages = st.session_state.chat_messages[:-12]
-
-                    st.session_state.chat_summary = summarize_chat_history(
-                        old_messages,
+                try:
+                    answer = answer_doubt(
+                        question,
+                        lesson,
+                        lesson_settings["difficulty"],
+                        st.session_state.chat_messages,
                         st.session_state.chat_summary
                     )
 
-                    st.session_state.chat_messages = (
-                        st.session_state.chat_messages[-12:]
+                except ValueError as e:
+                    st.warning(str(e))
+
+                except Exception:
+                    st.error(
+                        "Something went wrong while answering your question. "
+                        "Please try again."
                     )
+                    
+                # except Exception as e:
+                #     logger.error(
+                #         "Chat answering failed: %s",
+                #         type(e).__name__,
+                #         exc_info=True
+                #     )
+                #     st.error(
+                #         "Something went wrong while answering your question. "
+                #         "Please try again."
+                #     )
 
-                # Save the FINAL state
-                history.update_chat(
-                    lesson_id=st.session_state.lesson_db_id,
-                    chat_messages=st.session_state.chat_messages,
-                    chat_summary=st.session_state.chat_summary
-                )
+                else:
+                    st.session_state.chat_messages.append({
+                        "role": "user",
+                        "content": question
+                    })
 
-            st.markdown(answer)
+                    st.session_state.chat_messages.append({
+                        "role": "assistant",
+                        "content": answer
+                    })
+
+                    # Trim only after the new messages have been added
+                    if len(st.session_state.chat_messages) > 12:
+                        old_messages = st.session_state.chat_messages[:-12]
+
+                        try:
+                            st.session_state.chat_summary = summarize_chat_history(
+                                old_messages,
+                                st.session_state.chat_summary
+                            )
+
+                            st.session_state.chat_messages = (
+                                st.session_state.chat_messages[-12:]
+                            )
+
+                        except Exception:
+                            # Keep the existing messages if summarization fails.
+                            st.warning(
+                                "Your answer was generated, but chat history "
+                                "could not be summarized. You can continue chatting."
+                            )
+
+                    # Save the current chat state
+                    try:
+                        history.update_chat(
+                            lesson_id=st.session_state.lesson_db_id,
+                            chat_messages=st.session_state.chat_messages,
+                            chat_summary=st.session_state.chat_summary
+                        )
+                    except Exception:
+                        st.warning(
+                            "Your answer was generated, but the chat history "
+                            "could not be saved."
+                        )
+                    st.markdown(answer)
 
 
